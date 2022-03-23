@@ -6,6 +6,7 @@ var path = require("path");
 var fs   = require("fs");
 var util = require("util");
 var exec = require("child_process").exec;
+var os   = require("os");
 
 function PDFImage(pdfFilePath, options) {
   if (!options) options = {};
@@ -24,18 +25,31 @@ function PDFImage(pdfFilePath, options) {
 PDFImage.prototype = {
   constructGetInfoCommand: function () {
     return util.format(
-      "pdfinfo \"%s\"",
+      "pdfinfo %s",
       this.pdfFilePath
     );
   },
   parseGetInfoCommandOutput: function (output) {
-    var info = {};
-    output.split("\n").forEach(function (line) {
-      if (line.match(/^(.*?):[ \t]*(.*)$/)) {
-        info[RegExp.$1] = RegExp.$2;
+    const splitQuery = os.platform() === 'win32' ? "\r\n" : "\n"
+    
+    const result = output.split(splitQuery).map(data => {
+      const matched = data.match(/^(.*?):[ \t]*(.*)$/)
+
+      if (!matched) {
+        return {
+          key: '',
+          val: ''
+        }
       }
-    });
-    return info;
+
+      return {
+        key: matched[1],
+        val: matched[2]
+      }
+    })
+
+    const info = result.reduce((prev, current) => ({...prev, [current.key]: current.val}), {})
+    return info
   },
   getInfo: function () {
     var self = this;
