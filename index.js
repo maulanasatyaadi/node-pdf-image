@@ -96,20 +96,34 @@ PDFImage.prototype = {
     this.convertExtension = convertExtension || "png";
   },
   constructConvertCommandForPage: function (pageNumber) {
-    var pdfFilePath = this.pdfFilePath;
-    var outputImagePath = this.getOutputImagePathForPage(pageNumber);
-    var convertOptionsString = this.constructConvertOptions();
+    const pdfFilePath = this.pdfFilePath;
+    const outputImagePath = this.getOutputImagePathForPage(pageNumber);
+    const convertOptionsString = this.constructConvertOptions();
+
+    let convertCommand = 'convert'
+
+    if (process.platform === 'win32') {
+      convertCommand = 'magick convert'
+    }
+
     return util.format(
       "%s %s\"%s[%d]\" \"%s\"",
-      this.useGM ? "gm convert" : "convert",
+      this.useGM ? "gm convert" : convertCommand,
       convertOptionsString ? convertOptionsString + " " : "",
       pdfFilePath, pageNumber, outputImagePath
     );
   },
   constructCombineCommandForFile: function (imagePaths) {
+
+    let convertCommand = 'convert'
+
+    if (process.platform === 'win32') {
+      convertCommand = 'magick convert'
+    }
+
     return util.format(
       "%s -append %s \"%s\"",
-      this.useGM ? "gm convert" : "convert",
+      this.useGM ? "gm convert" : convertCommand,
       imagePaths.join(' '),
       this.getOutputImagePathForFile()
     );
